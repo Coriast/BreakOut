@@ -22,6 +22,8 @@ float ShakeTime = 0.0f;
 bool checkCollision(GameObject& one, GameObject& two);
 Collision checkCollision(BallObject& one, GameObject& two);
 Direction vectorDirection(glm::vec2 target);
+bool ShouldSpawn(unsigned int chance);
+void ActivatePowerUp(PowerUp& powerUp);
 
 
 Game::Game(unsigned int width, unsigned int height) : State(GAME_ACTIVE), Keys(), Width(width), Height(height) {
@@ -53,6 +55,12 @@ void Game::init() {
 	ResourceManager::LoadTexture("/textures/blockSolid.png", false, "blockSolid", DEBUG);
 	ResourceManager::LoadTexture("/textures/paddle.png", true, "paddle", DEBUG);
 	ResourceManager::LoadTexture("/textures/particle.png", true, "particle", DEBUG);
+	ResourceManager::LoadTexture("/textures/powerup_chaos.png", true, "chaos", DEBUG);
+	ResourceManager::LoadTexture("/textures/powerup_confuse.png", true, "confuse", DEBUG);
+	ResourceManager::LoadTexture("/textures/powerup_increase.png", true, "increase", DEBUG);
+	ResourceManager::LoadTexture("/textures/powerup_passThrough.png", true, "passThrough", DEBUG);
+	ResourceManager::LoadTexture("/textures/powerup_speed.png", true, "speed", DEBUG);
+	ResourceManager::LoadTexture("/textures/powerup_sticky.png", true, "sticky", DEBUG);
 
 	Renderer	= new SpriteRenderer(ResourceManager::GetShader("sprite"));
 	Particles	= new ParticleGenerator(ResourceManager::GetShader("particle"), ResourceManager::GetTexture("particle"), 500);
@@ -147,7 +155,10 @@ void Game::DoCollisions()
 			if (std::get<0>(collision))
 			{
 				if (!box.IsSolid)
+				{
 					box.Destroyed = true;
+					this->SpawnPowerUps(box);
+				}
 				else
 				{
 					ShakeTime = 0.05f;
@@ -189,6 +200,22 @@ void Game::DoCollisions()
 		Ball->Velocity.x = INITIAL_BALL_VELOCITY.x * percentage * strength;
 		Ball->Velocity.y = -1.0f * abs(Ball->Velocity.y);
 		Ball->Velocity = glm::normalize(Ball->Velocity) * glm::length(oldVelocity);
+		Ball->Stuck = Ball->Sticky;
+	}
+
+	for (PowerUp& powerUp : this->PowerUps)
+	{
+		if (!powerUp.Destroyed)
+		{
+			if (powerUp.Position.y >= this->Height)
+				powerUp.Destroyed = true;
+			if (checkCollision(*Player, powerUp))
+			{
+				ActivatePowerUp(powerUp);
+				powerUp.Destroyed = true;
+				powerUp.Activated = true;
+			}
+		}
 	}
 }
 
@@ -209,6 +236,62 @@ void Game::ResetPlayer()
 	Player->Size = PLAYER_SIZE;
 	Player->Position = glm::vec2(this->Width / 2.0f - PLAYER_SIZE.x / 2.0f, this->Height - PLAYER_SIZE.y);
 	Ball->Reset(Player->Position + glm::vec2(PLAYER_SIZE.x / 2.0f - BALL_RADIUS, -(BALL_RADIUS * 2.0f)), INITIAL_BALL_VELOCITY);
+}
+
+void Game::SpawnPowerUps(GameObject& block)
+{
+	if (ShouldSpawn(75))
+		this->PowerUps.push_back(PowerUp("speed", glm::vec3(0.5f, 0.5f, 1.0f), 0.0f, block.Position, ResourceManager::GetTexture("speed")));
+	if (ShouldSpawn(75))
+		this->PowerUps.push_back(PowerUp("sticky", glm::vec3(1.0f, 0.5f, 1.0f), 20.0f, block.Position, ResourceManager::GetTexture("sticky")));
+	if (ShouldSpawn(75))
+		this->PowerUps.push_back(PowerUp("passThrough", glm::vec3(0.5f, 1.0f, 0.5f), 10.0f, block.Position, ResourceManager::GetTexture("passThrough")));
+	if (ShouldSpawn(75))
+		this->PowerUps.push_back(PowerUp("increase", glm::vec3(1.0f, 0.6f, 0.4f), 0.0f, block.Position, ResourceManager::GetTexture("increase")));
+	if (ShouldSpawn(15))
+		this->PowerUps.push_back(PowerUp("confuse", glm::vec3(1.5f, 0.3f, 0.3f), 15.0f, block.Position, ResourceManager::GetTexture("confuse")));
+	if (ShouldSpawn(15))
+		this->PowerUps.push_back(PowerUp("chaos", glm::vec3(0.25f, 0.25f, 0.25f), 15.0f, block.Position, ResourceManager::GetTexture("chaos")));
+
+}
+
+// Non-Class methods
+void ActivatePowerUp(PowerUp& powerUp)
+{
+	if (powerUp.Type == "speed")
+	{
+		Ball->Velocity *= 1.2f;
+	}
+	else if (powerUp.Type == "sticky")
+	{
+		Ball->Sticky = true;
+		Player->Color = glm::vec3(1.0f, 0.5f, 1.0f);
+	}
+	else if (powerUp.Type == "passThrough")
+	{
+		Ball->PassThrough = true;
+		Ball->Color = glm::vec3(1.0f, 0.5f, 0.5f);
+	}
+	else if (powerUp.Type == "increase")
+	{
+		Player->Size.x += 50;
+	}
+	else if (powerUp.Type == "confuse")
+	{
+		if (!Effects->Chaos)
+			Effects->Confuse = true;
+	}
+	else if (powerUp.Type == "chaos")
+	{
+		if (!Effects->Confuse)
+			Effects->Chaos = true;
+	}
+}
+
+bool ShouldSpawn(unsigned int chance)
+{
+	unsigned int random = rand() % chance;
+	return random == 0;
 }
 
 bool checkCollision(GameObject& one, GameObject& two)
@@ -259,4 +342,6 @@ Direction vectorDirection(glm::vec2 target)
 	}
 	return (Direction)best_match;
 }
+
+
 
