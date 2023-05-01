@@ -27,8 +27,8 @@ else()
 endif()
 
 add_custom_command(TARGET BreakOut POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    "${PROJECT_SOURCE_DIR}/include/irrKlang/bin/winx64-visualStudio/irrKlang.dll"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    "${PROJECT_SOURCE_DIR}/include/irrKlang/bin/winx64-visualStudio"
     $<TARGET_FILE_DIR:BreakOut>
 )
 

@@ -168,11 +168,13 @@ void Game::DoCollisions()
 				{
 					box.Destroyed = true;
 					this->SpawnPowerUps(box);
+					SoundEngine->play2D(string(fileP + "/sounds/bleep.mp3").c_str(), false);
 				}
 				else
 				{
 					ShakeTime = 0.05f;
 					Effects->Shake = true;
+					SoundEngine->play2D(string(fileP + "/sounds/solid.wav").c_str(), false);
 				}
 				Direction dir = std::get<1>(collision);
 				glm::vec2 diff_vector = std::get<2>(collision);
@@ -212,6 +214,7 @@ void Game::DoCollisions()
 				ActivatePowerUp(powerUp);
 				powerUp.Destroyed = true;
 				powerUp.Activated = true;
+				SoundEngine->play2D(string(fileP + "/sounds/powerup.wav").c_str(), false);
 			}
 		}
 	}
@@ -229,6 +232,7 @@ void Game::DoCollisions()
 		Ball->Velocity.y = -1.0f * abs(Ball->Velocity.y);
 		Ball->Velocity = glm::normalize(Ball->Velocity) * glm::length(oldVelocity);
 		Ball->Stuck = Ball->Sticky;
+		SoundEngine->play2D(string(fileP + "/sounds/bleep.wav").c_str(), false);
 	}
 }
 
