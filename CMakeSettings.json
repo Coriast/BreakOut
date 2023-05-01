@@ -20,6 +20,11 @@
           "name": "glfw3_DIR",
           "value": "C:/vcpkg/installed/x64-windows-static/share/glfw3",
           "type": "PATH"
+        },
+        {
+          "name": "irrKlang_DIR",
+          "value": "C:\\vcpkg\\installed\\x64-windows-static\\share\\irrKlang",
+          "type": "PATH"
         }
       ]
     },

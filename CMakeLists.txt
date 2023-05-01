@@ -9,7 +9,7 @@ cmake_minimum_required (VERSION 3.8)
 set (CMAKE_CXX_STANDARD 17)
 project (BreakOut)
 
-include_directories(include)
+include_directories(include "${PROJECT_SOURCE_DIR}/include/irrKlang/include") 
 
 file(GLOB SOURCES "src/*.cpp" "src/*.c" "include/*.hpp" "include/*.h" ) 
 
@@ -24,8 +24,8 @@ find_package(glad REQUIRED)
 
 find_package(OpenGL REQUIRED)
 
-target_link_libraries(BreakOut PRIVATE glfw glm::glm glad::glad ${OPENGL_LIBRARY})
 
+target_link_libraries(BreakOut PRIVATE glfw glm::glm glad::glad "${PROJECT_SOURCE_DIR}/include/irrKlang/lib" ${OPENGL_LIBRARY})
 
 
 # Desabilitar Windows Console

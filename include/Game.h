@@ -6,6 +6,7 @@
 #include <iostream>
 #include <filesystem>
 #include <tuple>
+#include <irrKlang.h>
 #include "SpriteRenderer.h"
 #include "ResourceManager.h"
 #include "GameLevel.h"
