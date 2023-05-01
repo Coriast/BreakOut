@@ -2,6 +2,7 @@
 #define DEBUG 1
 
 using namespace std;
+using namespace irrklang;
 
 string fileP = ResourceManager::GetAbsolutePath(DEBUG);
 
@@ -16,6 +17,7 @@ GameObject*			Player;
 BallObject*			Ball;
 ParticleGenerator*	Particles;
 PostProcessor*		Effects;
+ISoundEngine*		SoundEngine = createIrrKlangDevice();
 
 float ShakeTime = 0.0f;
 
@@ -83,7 +85,7 @@ void Game::init() {
 
 	glm::vec2 ballPos = playerPos + glm::vec2(PLAYER_SIZE.x / 2.0f - BALL_RADIUS, -BALL_RADIUS * 2.0f);
 	Ball = new BallObject(ballPos, BALL_RADIUS, INITIAL_BALL_VELOCITY, ResourceManager::GetTexture("face"));
-
+	SoundEngine->play2D(string(fileP + "/sounds/breakout.mp3").c_str(), true);
 }
 
 void Game::Update(float dt) {
