@@ -24,6 +24,7 @@ Collision checkCollision(BallObject& one, GameObject& two);
 Direction vectorDirection(glm::vec2 target);
 bool ShouldSpawn(unsigned int chance);
 void ActivatePowerUp(PowerUp& powerUp);
+bool isOtherPowerUpActive(std::vector<PowerUp>& powerUps, std::string type);
 
 
 Game::Game(unsigned int width, unsigned int height) : State(GAME_ACTIVE), Keys(), Width(width), Height(height) {
@@ -91,6 +92,8 @@ void Game::Update(float dt) {
 
 	Particles->Update(dt, *Ball, 2, glm::vec2(Ball->Radius / 2.0f));
 
+	this->UpdatePowerUps(dt);
+
 	if (ShakeTime > 0.0f)
 	{
 		ShakeTime -= dt;
@@ -139,6 +142,11 @@ void Game::Render() {
 			Player->Draw(*Renderer);
 			Particles->Draw();
 			Ball->Draw(*Renderer);
+			for (PowerUp& powerUp : this->PowerUps)
+			{
+				if (!powerUp.Destroyed)
+					powerUp.Draw(*Renderer);
+			}
 		}
 		Effects->EndRender();
 		Effects->Render(glfwGetTime());
@@ -166,24 +174,42 @@ void Game::DoCollisions()
 				}
 				Direction dir = std::get<1>(collision);
 				glm::vec2 diff_vector = std::get<2>(collision);
-				if (dir == LEFT || dir == RIGHT)
+				if (!(Ball->PassThrough && !box.IsSolid))
 				{
-					Ball->Velocity.x = -Ball->Velocity.x;
-					float penetration = Ball->Radius - std::abs(diff_vector.x);
-					if (dir == LEFT)
-						Ball->Position.x += penetration;
+					if (dir == LEFT || dir == RIGHT)
+					{
+						Ball->Velocity.x = -Ball->Velocity.x;
+						float penetration = Ball->Radius - std::abs(diff_vector.x);
+						if (dir == LEFT)
+							Ball->Position.x += penetration;
+						else
+							Ball->Position.x -= penetration;
+					}
 					else
-						Ball->Position.x -= penetration;
+					{
+						Ball->Velocity.y = -Ball->Velocity.y;
+						float penetration = Ball->Radius - std::abs(diff_vector.y);
+						if (dir == UP)
+							Ball->Position.y -= penetration;
+						else
+							Ball->Position.y += penetration;
+					}
 				}
-				else
-				{
-					Ball->Velocity.y = -Ball->Velocity.y;
-					float penetration = Ball->Radius - std::abs(diff_vector.y);
-					if (dir == UP)
-						Ball->Position.y -= penetration;
-					else
-						Ball->Position.y += penetration;
-				}
+			}
+		}
+	}
+
+	for (PowerUp& powerUp : this->PowerUps)
+	{
+		if (!powerUp.Destroyed)
+		{
+			if (powerUp.Position.y >= this->Height)
+				powerUp.Destroyed = true;
+			if (checkCollision(*Player, powerUp))
+			{
+				ActivatePowerUp(powerUp);
+				powerUp.Destroyed = true;
+				powerUp.Activated = true;
 			}
 		}
 	}
@@ -201,21 +227,6 @@ void Game::DoCollisions()
 		Ball->Velocity.y = -1.0f * abs(Ball->Velocity.y);
 		Ball->Velocity = glm::normalize(Ball->Velocity) * glm::length(oldVelocity);
 		Ball->Stuck = Ball->Sticky;
-	}
-
-	for (PowerUp& powerUp : this->PowerUps)
-	{
-		if (!powerUp.Destroyed)
-		{
-			if (powerUp.Position.y >= this->Height)
-				powerUp.Destroyed = true;
-			if (checkCollision(*Player, powerUp))
-			{
-				ActivatePowerUp(powerUp);
-				powerUp.Destroyed = true;
-				powerUp.Activated = true;
-			}
-		}
 	}
 }
 
@@ -255,7 +266,68 @@ void Game::SpawnPowerUps(GameObject& block)
 
 }
 
+void Game::UpdatePowerUps(float dt)
+{
+	for (PowerUp& powerUp : this->PowerUps)
+	{
+		powerUp.Position += powerUp.Velocity * dt;
+		if (powerUp.Activated)
+		{
+			powerUp.Duration -= dt;
+			if (powerUp.Duration <= 0.0f)
+			{
+				powerUp.Activated = false;
+				if (powerUp.Type == "sticky")
+				{
+					if (!isOtherPowerUpActive(this->PowerUps, "sticky"))
+					{
+						Ball->Sticky = false;
+						Player->Color = glm::vec3(1.0f);
+					}
+				}
+				else if (powerUp.Type == "passThrough")
+				{
+					if (!isOtherPowerUpActive(this->PowerUps, "passThrough"))
+					{
+						Ball->PassThrough = false;
+						Player->Color = glm::vec3(1.0f);
+					}
+				}
+				else if (powerUp.Type == "confuse")
+				{
+					if (!isOtherPowerUpActive(this->PowerUps, "confuse"))
+					{
+						Effects->Confuse = false;
+					}
+				}
+				else if (powerUp.Type == "chaos")
+				{
+					if (!isOtherPowerUpActive(this->PowerUps, "chaos"))
+					{
+						Effects->Chaos = false;
+					}
+				}
+			}
+		}
+	}
+	this->PowerUps.erase(std::remove_if(this->PowerUps.begin(), this->PowerUps.end(), [](const PowerUp& powerUp)
+		{
+			return powerUp.Destroyed && !powerUp.Activated;
+		}), this->PowerUps.end());
+}
+
 // Non-Class methods
+bool isOtherPowerUpActive(std::vector<PowerUp>& powerUps, std::string type)
+{
+	for (const PowerUp& powerUp : powerUps)
+	{
+		if (powerUp.Activated)
+			if (powerUp.Type == type)
+				return true;
+	}
+	return false;
+}
+
 void ActivatePowerUp(PowerUp& powerUp)
 {
 	if (powerUp.Type == "speed")
