@@ -1,10 +1,9 @@
 #include "Game.h"
-#define DEBUG 1
 
 using namespace std;
 using namespace irrklang;
 
-string fileP = ResourceManager::GetAbsolutePath(DEBUG);
+string fileP = ResourceManager::GetAbsolutePath();
 
 const glm::vec2 PLAYER_SIZE(100.0f, 20.0f);
 const float PLAYER_VELOCITY(500.0f);
@@ -18,6 +17,7 @@ BallObject*			Ball;
 ParticleGenerator*	Particles;
 PostProcessor*		Effects;
 ISoundEngine*		SoundEngine = createIrrKlangDevice();
+TextRenderer*		Text;
 
 float ShakeTime = 0.0f;
 
@@ -29,7 +29,7 @@ void ActivatePowerUp(PowerUp& powerUp);
 bool isOtherPowerUpActive(std::vector<PowerUp>& powerUps, std::string type);
 
 
-Game::Game(unsigned int width, unsigned int height) : State(GAME_ACTIVE), Keys(), Width(width), Height(height) {
+Game::Game(unsigned int width, unsigned int height) : State(GAME_ACTIVE), Keys(), Width(width), Height(height), Level(0), Lives(3) {
 
 }
 
@@ -39,12 +39,14 @@ Game::~Game() {
 	delete Ball;
 	delete Particles;
 	delete Effects;
+	delete Text;
+	SoundEngine->drop();
 }
 
 void Game::init() {
-	ResourceManager::LoadShader("/shaders/sprite.vs", "/shaders/sprite.frag", nullptr, "sprite", DEBUG);
-	ResourceManager::LoadShader("/shaders/particle.vs", "/shaders/particle.frag", nullptr, "particle", DEBUG);	
-	ResourceManager::LoadShader("/shaders/postProcessing.vs", "/shaders/postProcessing.frag", nullptr, "postProcessing", DEBUG);
+	ResourceManager::LoadShader("/shaders/sprite.vs", "/shaders/sprite.frag", nullptr, "sprite");
+	ResourceManager::LoadShader("/shaders/particle.vs", "/shaders/particle.frag", nullptr, "particle");	
+	ResourceManager::LoadShader("/shaders/postProcessing.vs", "/shaders/postProcessing.frag", nullptr, "postProcessing");
 
 	glm::mat4 projection = glm::ortho(0.0f, static_cast<float>(this->Width), static_cast<float>(this->Height), 0.0f, -1.0f, 1.0f);
 	ResourceManager::GetShader("sprite").Use().SetInteger("image", 0);
@@ -52,18 +54,18 @@ void Game::init() {
 	ResourceManager::GetShader("particle").Use().SetInteger("sprite", 0);
 	ResourceManager::GetShader("particle").SetMatrix4("projection", projection);
 
-	ResourceManager::LoadTexture("/textures/face.png", true, "face", DEBUG);
-	ResourceManager::LoadTexture("/textures/background.jpg", false, "background", DEBUG);
-	ResourceManager::LoadTexture("/textures/block.png", false, "block", DEBUG);
-	ResourceManager::LoadTexture("/textures/blockSolid.png", false, "blockSolid", DEBUG);
-	ResourceManager::LoadTexture("/textures/paddle.png", true, "paddle", DEBUG);
-	ResourceManager::LoadTexture("/textures/particle.png", true, "particle", DEBUG);
-	ResourceManager::LoadTexture("/textures/powerup_chaos.png", true, "chaos", DEBUG);
-	ResourceManager::LoadTexture("/textures/powerup_confuse.png", true, "confuse", DEBUG);
-	ResourceManager::LoadTexture("/textures/powerup_increase.png", true, "increase", DEBUG);
-	ResourceManager::LoadTexture("/textures/powerup_passThrough.png", true, "passThrough", DEBUG);
-	ResourceManager::LoadTexture("/textures/powerup_speed.png", true, "speed", DEBUG);
-	ResourceManager::LoadTexture("/textures/powerup_sticky.png", true, "sticky", DEBUG);
+	ResourceManager::LoadTexture("/textures/face.png", true, "face");
+	ResourceManager::LoadTexture("/textures/background.jpg", false, "background");
+	ResourceManager::LoadTexture("/textures/block.png", false, "block");
+	ResourceManager::LoadTexture("/textures/blockSolid.png", false, "blockSolid");
+	ResourceManager::LoadTexture("/textures/paddle.png", true, "paddle");
+	ResourceManager::LoadTexture("/textures/particle.png", true, "particle");
+	ResourceManager::LoadTexture("/textures/powerup_chaos.png", true, "chaos");
+	ResourceManager::LoadTexture("/textures/powerup_confuse.png", true, "confuse");
+	ResourceManager::LoadTexture("/textures/powerup_increase.png", true, "increase");
+	ResourceManager::LoadTexture("/textures/powerup_passThrough.png", true, "passThrough");
+	ResourceManager::LoadTexture("/textures/powerup_speed.png", true, "speed");
+	ResourceManager::LoadTexture("/textures/powerup_sticky.png", true, "sticky");
 
 	Renderer	= new SpriteRenderer(ResourceManager::GetShader("sprite"));
 	Particles	= new ParticleGenerator(ResourceManager::GetShader("particle"), ResourceManager::GetTexture("particle"), 500);
@@ -86,6 +88,9 @@ void Game::init() {
 	glm::vec2 ballPos = playerPos + glm::vec2(PLAYER_SIZE.x / 2.0f - BALL_RADIUS, -BALL_RADIUS * 2.0f);
 	Ball = new BallObject(ballPos, BALL_RADIUS, INITIAL_BALL_VELOCITY, ResourceManager::GetTexture("face"));
 	SoundEngine->play2D(string(fileP + "/sounds/breakout.mp3").c_str(), true);
+
+	Text = new TextRenderer(this->Width, this->Height);
+	Text->Load(string(fileP + "/fonts/ocraext.TTF").c_str(), 24);
 }
 
 void Game::Update(float dt) {
@@ -105,7 +110,12 @@ void Game::Update(float dt) {
 
 	if (Ball->Position.y >= this->Height)
 	{
-		this->ResetLevel();
+		--this->Lives;
+		if (this->Lives == 0)
+		{
+			this->ResetLevel();
+			this->State = GAME_MENU;
+		}
 		this->ResetPlayer();
 	}
 }
@@ -149,9 +159,14 @@ void Game::Render() {
 				if (!powerUp.Destroyed)
 					powerUp.Draw(*Renderer);
 			}
+
+			
 		}
 		Effects->EndRender();
 		Effects->Render(glfwGetTime());
+
+		std::stringstream ss; ss << this->Lives;
+		Text->RenderText("Lives:" + ss.str(), 5.0f, 5.0f, 1.0f);
 	}
 }
 
@@ -246,6 +261,7 @@ void Game::ResetLevel()
 		this->Levels[2].Load(string(fileP + "/levels/three.lvl").c_str(), this->Width, this->Height / 2);
 	else if (this->Level == 3)
 		this->Levels[3].Load(string(fileP + "/levels/four.lvl").c_str(), this->Width, this->Height / 2);
+	this->Lives = 3;
 }
 
 void Game::ResetPlayer()
@@ -253,6 +269,11 @@ void Game::ResetPlayer()
 	Player->Size = PLAYER_SIZE;
 	Player->Position = glm::vec2(this->Width / 2.0f - PLAYER_SIZE.x / 2.0f, this->Height - PLAYER_SIZE.y);
 	Ball->Reset(Player->Position + glm::vec2(PLAYER_SIZE.x / 2.0f - BALL_RADIUS, -(BALL_RADIUS * 2.0f)), INITIAL_BALL_VELOCITY);
+
+	Effects->Chaos = Effects->Confuse = false;
+	Ball->PassThrough = Ball->Sticky = false;
+	Player->Color = glm::vec3(1.0f);
+	Ball->Color = glm::vec3(1.0f);
 }
 
 void Game::SpawnPowerUps(GameObject& block)

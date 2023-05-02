@@ -32,6 +32,8 @@ add_custom_command(TARGET BreakOut POST_BUILD
     $<TARGET_FILE_DIR:BreakOut>
 )
 
+find_package(Freetype REQUIRED)
+
 find_package(glfw3 REQUIRED)
 
 find_package(glm REQUIRED)
@@ -41,7 +43,7 @@ find_package(glad REQUIRED)
 find_package(OpenGL REQUIRED)
 
 
-target_link_libraries(BreakOut PRIVATE glfw glm::glm glad::glad ${IRRKLANG_LIB} ${OPENGL_LIBRARY})
+target_link_libraries(BreakOut PRIVATE glfw glm::glm glad::glad Freetype::Freetype ${IRRKLANG_LIB} ${OPENGL_LIBRARY})
 
 
 

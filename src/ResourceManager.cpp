@@ -7,15 +7,17 @@
 #include <fstream>
 #include <filesystem>
 
+#define DEBUG 1
+
 // Instantiate static variables
 std::map<std::string, Texture2D>    ResourceManager::Textures;
 std::map<std::string, Shader>       ResourceManager::Shaders;
 
 
-Shader ResourceManager::LoadShader(const char* vShaderFile, const char* fShaderFile, const char* gShaderFile, std::string name, bool DEBUG)
+Shader ResourceManager::LoadShader(const char* vShaderFile, const char* fShaderFile, const char* gShaderFile, std::string name)
 {
 
-    Shaders[name] = loadShaderFromFile(std::string(GetAbsolutePath(DEBUG) + vShaderFile).c_str(), std::string(GetAbsolutePath(DEBUG) + fShaderFile).c_str(), gShaderFile);
+    Shaders[name] = loadShaderFromFile(std::string(GetAbsolutePath() + vShaderFile).c_str(), std::string(GetAbsolutePath() + fShaderFile).c_str(), gShaderFile);
     return Shaders[name];
 }
 
@@ -24,9 +26,9 @@ Shader ResourceManager::GetShader(std::string name)
     return Shaders[name];
 }
 
-Texture2D ResourceManager::LoadTexture(const char* file, bool alpha, std::string name, bool DEBUG)
+Texture2D ResourceManager::LoadTexture(const char* file, bool alpha, std::string name) 
 {
-    Textures[name] = loadTextureFromFile(std::string(GetAbsolutePath(DEBUG) + file).c_str(), alpha);
+    Textures[name] = loadTextureFromFile(std::string(GetAbsolutePath() + file).c_str(), alpha);
     return Textures[name];
 }
 
@@ -35,7 +37,7 @@ Texture2D ResourceManager::GetTexture(std::string name)
     return Textures[name];
 }
 
-std::string ResourceManager::GetAbsolutePath(bool DEBUG)
+std::string ResourceManager::GetAbsolutePath()
 {
     char buffer[1024];
     GetModuleFileNameA(NULL, buffer, 1024);
