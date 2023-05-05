@@ -90,7 +90,7 @@ void Game::init() {
 	SoundEngine->play2D(string(fileP + "/sounds/breakout.mp3").c_str(), true);
 
 	Text = new TextRenderer(this->Width, this->Height);
-	Text->Load(string(fileP + "/fonts/ocraext.TTF").c_str(), 24);
+	Text->Load(string(fileP + "/fonts/OCRAEXT.TTF").c_str(), 24);
 }
 
 void Game::Update(float dt) {
@@ -145,7 +145,7 @@ void Game::ProcessInput(float dt) {
 }
 
 void Game::Render() {
-	if (this->State == GAME_ACTIVE)
+	/*if (this->State == GAME_ACTIVE)
 	{
 		Effects->BeginRender();
 		{
@@ -165,9 +165,11 @@ void Game::Render() {
 		Effects->EndRender();
 		Effects->Render(glfwGetTime());
 
-		std::stringstream ss; ss << this->Lives;
-		Text->RenderText("Lives:" + ss.str(), 5.0f, 5.0f, 1.0f);
+		
 	}
+	*/
+	std::stringstream ss; ss << this->Lives;
+	Text->RenderText("Lives:" + ss.str(), 5.0f, 5.0f, 1.0f);
 }
 
 void Game::DoCollisions()
