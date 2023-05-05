@@ -174,13 +174,18 @@ void Game::Render() {
 					powerUp.Draw(*Renderer);
 			}
 
-			
+
+			Effects->EndRender();
+			Effects->Render(glfwGetTime());
 		}
-		Effects->EndRender();
-		Effects->Render(glfwGetTime());
 
 		std::stringstream ss; ss << this->Lives;
 		Text->RenderText("Lives:" + ss.str(), 5.0f, 5.0f, 1.0f);
+	}
+	if (this->State == GAME_MENU)
+	{
+		Text->RenderText("Press ENTER to start", 250.0f, Height / 2, 1.0f);
+		Text->RenderText("Press W or S to select level", 245.0f, Height / 2 + 20.0f, 0.75f);
 	}
 }
 
