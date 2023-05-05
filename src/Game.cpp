@@ -142,10 +142,24 @@ void Game::ProcessInput(float dt) {
 		if (this->Keys[GLFW_KEY_SPACE])
 			Ball->Stuck = false;
 	}
+	if (this->State == GAME_MENU)
+	{
+		if (this->Keys[GLFW_KEY_ENTER])
+			this->State = GAME_ACTIVE;
+		if (this->Keys[GLFW_KEY_W])
+			this->Level = (this->Level + 1) % 4;
+		if (this->Keys[GLFW_KEY_S])
+		{
+			if (this->Level > 0)
+				--this->Level;
+			else
+				this->Level = 3;
+		}
+	}
 }
 
 void Game::Render() {
-	/*if (this->State == GAME_ACTIVE)
+	if (this->State == GAME_ACTIVE)
 	{
 		Effects->BeginRender();
 		{
@@ -165,11 +179,9 @@ void Game::Render() {
 		Effects->EndRender();
 		Effects->Render(glfwGetTime());
 
-		
+		std::stringstream ss; ss << this->Lives;
+		Text->RenderText("Lives:" + ss.str(), 5.0f, 5.0f, 1.0f);
 	}
-	*/
-	std::stringstream ss; ss << this->Lives;
-	Text->RenderText("Lives:" + ss.str(), 5.0f, 5.0f, 1.0f);
 }
 
 void Game::DoCollisions()
