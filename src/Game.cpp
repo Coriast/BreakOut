@@ -29,7 +29,7 @@ void ActivatePowerUp(PowerUp& powerUp);
 bool isOtherPowerUpActive(std::vector<PowerUp>& powerUps, std::string type);
 
 
-Game::Game(unsigned int width, unsigned int height) : State(GAME_ACTIVE), Keys(), Width(width), Height(height), Level(0), Lives(3) {
+Game::Game(unsigned int width, unsigned int height) : State(GAME_MENU), Keys(), Width(width), Height(height), Level(0), Lives(3) {
 
 }
 
@@ -118,6 +118,14 @@ void Game::Update(float dt) {
 		}
 		this->ResetPlayer();
 	}
+
+	if (this->State == GAME_ACTIVE && this->Levels[this->Level].IsCompleted())
+	{
+		this->ResetLevel();
+		this->ResetPlayer();
+		Effects->Chaos = true;
+		this->State = GAME_WIN;
+	}
 }
 
 void Game::ProcessInput(float dt) {
@@ -144,22 +152,38 @@ void Game::ProcessInput(float dt) {
 	}
 	if (this->State == GAME_MENU)
 	{
-		if (this->Keys[GLFW_KEY_ENTER])
+		if (this->Keys[GLFW_KEY_ENTER] && !this->KeysProcessed[GLFW_KEY_ENTER])
+		{
 			this->State = GAME_ACTIVE;
-		if (this->Keys[GLFW_KEY_W])
+			this->KeysProcessed[GLFW_KEY_ENTER] = true;
+		}
+		if (this->Keys[GLFW_KEY_W] && !this->KeysProcessed[GLFW_KEY_W])
+		{
 			this->Level = (this->Level + 1) % 4;
-		if (this->Keys[GLFW_KEY_S])
+			this->KeysProcessed[GLFW_KEY_W] = true;
+		}
+		if (this->Keys[GLFW_KEY_S] && !this->KeysProcessed[GLFW_KEY_S])
 		{
 			if (this->Level > 0)
 				--this->Level;
 			else
 				this->Level = 3;
+			this->KeysProcessed[GLFW_KEY_S] = true;
+		}
+	}
+	if (this->State == GAME_WIN)
+	{
+		if (this->Keys[GLFW_KEY_ENTER])
+		{
+			this->KeysProcessed[GLFW_KEY_ENTER] = true;
+			Effects->Chaos = false;
+			this->State = GAME_MENU;
 		}
 	}
 }
 
 void Game::Render() {
-	if (this->State == GAME_ACTIVE)
+	if (this->State == GAME_ACTIVE || this->State == GAME_MENU)
 	{
 		Effects->BeginRender();
 		{
@@ -174,18 +198,23 @@ void Game::Render() {
 					powerUp.Draw(*Renderer);
 			}
 
+			std::stringstream ss; ss << this->Lives;
+			Text->RenderText("Lives:" + ss.str(), 5.0f, 5.0f, 1.0f);
 
 			Effects->EndRender();
 			Effects->Render(glfwGetTime());
 		}
 
-		std::stringstream ss; ss << this->Lives;
-		Text->RenderText("Lives:" + ss.str(), 5.0f, 5.0f, 1.0f);
 	}
 	if (this->State == GAME_MENU)
 	{
 		Text->RenderText("Press ENTER to start", 250.0f, Height / 2, 1.0f);
 		Text->RenderText("Press W or S to select level", 245.0f, Height / 2 + 20.0f, 0.75f);
+	}
+	if (this->State == GAME_WIN)
+	{
+		Text->RenderText("TU GANHOU?!?", 320.0, Height / 2 - 20.0, 1.0, glm::vec3(0.0, 1.0, 0.0));
+		Text->RenderText("Press ENTER to retry or ESC to quit", 130.0, Height / 2, 1.0, glm::vec3(1.0, 1.0, 0.0));
 	}
 }
 
