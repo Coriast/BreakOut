@@ -13,7 +13,6 @@ file(GLOB SOURCES "src/*.cpp" "src/*.c" "include/*.hpp" "include/*.h")
 
 add_executable (BreakOut ${SOURCES})
 
-
 include_directories(BreakOut include "${PROJECT_SOURCE_DIR}/include/irrKlang/include")
 
 find_library(IRRKLANG_LIB irrKlang NAMES irrKlang.lib PATHS  "${PROJECT_SOURCE_DIR}/include/irrKlang"
@@ -42,10 +41,7 @@ find_package(glad REQUIRED)
 
 find_package(OpenGL REQUIRED)
 
-
 target_link_libraries(BreakOut PRIVATE glfw glm::glm glad::glad Freetype::Freetype ${IRRKLANG_LIB} ${OPENGL_LIBRARY})
-
-
 
 # Desabilitar Windows Console
 if(WIN32 AND CMAKE_BUILD_TYPE STREQUAL "Release")
